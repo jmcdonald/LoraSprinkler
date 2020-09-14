@@ -126,13 +126,20 @@ void loop() {
       Serial.println(":");
       Serial.println(sprinklers[tx_message.zone].get_name());
       Serial.println(tx_message.zone);
-      strcpy(buf,sprinklers[tx_message.zone].get_name());
+      
+	  // Handle the message and include in the ACK
+	  
+	  if (strcmp("INIT",tx.message_type) == 0){
+		  strcpy(buf,sprinklers[tx_message.zone].get_name());
+	  } else if (strcmp("SCHD",tx.message_type) == 0){
+		  memcpy(&buf, zone_schedule[tx_message.zone], sizeof(zone_schedule[tx_message.zone]));
+	  }
+	  
       if (!manager.sendtoWait(buf, bufLen, from))
         mprint("sendtoWait failed");
     } else {
      mprint(" Message Failed");
     }
-
   }
   delay(300);
 }
