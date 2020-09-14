@@ -34,8 +34,9 @@
 #define CLIENT_ADDRESS  0
 
 #define NEW 0
-#define WAITING 1
-#define ENGAGED 2
+#define SCHD 1
+#define WAITING 2
+#define ENGAGED 3
 
 // Change to 434.0 or other frequency, must match RX's freq!
 #define RF95_FREQ 915.0
@@ -107,6 +108,8 @@ void loop() {
   // CHECK INITIALIZATION
   if (status == NEW){
     initialize();
+  } else if (status == SCHD){
+	get_schedule();
   } else {
     Serial.println(node_name);
   }
@@ -138,7 +141,7 @@ void initialize(){
       Serial.print(from, HEX);
       Serial.print(": ");
       Serial.println((char*)buf);     
-      status = WAITING; 
+      status = SC; 
       strncpy(node_name,(char*)buf, sizeof(node_name));
     } else {
       Serial.println("No reply, is rf95_reliable_datagram_server running?");
@@ -148,6 +151,48 @@ void initialize(){
   }
 }
 
+void get_schedule(){
+//  // build the message
+  data_message.zone = CLIENT_ADDRESS;
+  data_message.status = status;
+  data_message.zone_time = millis();
+  strcpy(data_message.message_type, "SCHD");
+  
+  data_message.zone_time = millis();
+  Serial.println("SCHEDULE REQUEST");
+  Serial.println("<======= Sending zone = " + String(data_message.zone));
+  Serial.println("<======= Sending time = " + String(data_message.zone_time));
+  Serial.println("<======= Sending type = " + String(data_message.message_type));
+  Serial.println("<======= Sending status = " + String(data_message.status));
+  Serial.println("<======= Message Size = " + String(sizeof(data_message))); 
+  memcpy(tx_buf, &data_message, sizeof(data_message) );  
+  if (manager.sendtoWait((uint8_t *)tx_buf, sizeof(data_message), SERVER_ADDRESS)) {
+    // Now wait for a reply from the server
+    uint8_t len = sizeof(buf);
+    uint8_t from;
+    if (manager.recvfromAckTimeout(buf, &len, 3000, &from)){
+      Serial.print("got reply from : 0x");
+      Serial.print(from, HEX);
+      Serial.print(": ");
+      Serial.println((char*)buf);     
+      status = WAITING; 
+      strncpy(node_name,(char*)buf, sizeof(node_name));
+    } else {
+      Serial.println("No reply, is rf95_reliable_datagram_server running?");
+    }
+  } else {
+    mprint("Schedule Request Failed");
+  }
+/* typedef struct{
+  unsigned long int zone_time;
+  uint8_t zone;
+  char message_type[5];
+  char message_data[100];
+  uint8_t status;
+  uint16_t error_count;
+} MESSAGE; 
+*/
+}
 template <typename T>
 void mprint( T t ) {
   Serial.print(millis());
