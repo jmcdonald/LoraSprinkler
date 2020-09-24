@@ -141,7 +141,7 @@ void initialize(){
       Serial.print(from, HEX);
       Serial.print(": ");
       Serial.println((char*)buf);     
-      status = SC; 
+      status = SCHD; 
       strncpy(node_name,(char*)buf, sizeof(node_name));
     } else {
       Serial.println("No reply, is rf95_reliable_datagram_server running?");
